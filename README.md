@@ -19,6 +19,8 @@ autonomous scanner (see below) -- both end up calling the exact same
 `core.pipeline.process_signal()`, so everything downstream behaves identically
 either way.
 
+![Pipeline: alert or scanner, then Claude decision, risk check, execution, record, journal, notification](pipeline_diagram.png)
+
 ```
 TradingView alert (Pine Script)
    -> HTTPS POST /webhook/tradingview   (FastAPI, shared-secret auth)
@@ -256,6 +258,12 @@ print(sorted(get_tradable_crypto_symbols()))
 ```
 
 ## GCP deployment
+
+![GCP architecture: one Compute Engine VM plus Secret Manager, Cloud Storage, Pub/Sub and Cloud Logging](architecture_gcp_simple.png)
+
+*GCP view only. The VM also calls three non-GCP services: Alpaca (paper broker and
+market data), Anthropic (the Claude agents) and Telegram (notifications). The
+autonomous scanner runs inside the VM itself, with no external trigger.*
 
 See [`deploy/setup_gce.md`](deploy/setup_gce.md) for the full walkthrough: GCS bucket,
 Secret Manager, the VM, HTTPS via a free `sslip.io` domain + certbot, and the systemd
