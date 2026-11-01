@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the trading bot daily summary once
+
+[Service]
+Type=oneshot
+User=tradingbot
+WorkingDirectory=/opt/tradingbot
+ExecStartPre=/opt/tradingbot/deploy/fetch_secrets.sh
+EnvironmentFile=-/opt/tradingbot/.env
+ExecStart=/opt/tradingbot/.venv/bin/python -m scripts.daily_summary

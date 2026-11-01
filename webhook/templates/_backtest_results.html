@@ -1,0 +1,50 @@
+{% if error %}
+<div class="empty">Backtest failed: {{ error }}</div>
+{% elif result %}
+<div class="health-grid" style="margin-bottom:1rem;">
+  <div class="health-stat"><span>Bars used</span><strong>{{ result.bars_used }}</strong></div>
+  <div class="health-stat"><span>Total signals</span><strong>{{ result.trades|length }}</strong></div>
+  <div class="health-stat"><span>Closed</span><strong>{{ result.closed_trades|length }}</strong></div>
+  <div class="health-stat">
+    <span>Win rate</span>
+    <strong>{{ "%.1f%%"|format(result.win_rate_pct) if result.win_rate_pct is not none else "-" }}</strong>
+  </div>
+  <div class="health-stat">
+    <span>Total P&amp;L</span>
+    <strong class="{{ 'pnl-pos' if result.total_pnl >= 0 else 'pnl-neg' }}">{{ "$%.2f"|format(result.total_pnl) }}</strong>
+  </div>
+</div>
+
+{% if result.trades %}
+<table>
+  <thead>
+    <tr>
+      <th>Entry</th>
+      <th>Entry price</th>
+      <th>Exit</th>
+      <th>Exit price</th>
+      <th>P&amp;L</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in result.trades %}
+    <tr>
+      <td>{{ t.entry_time.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td>${{ "%.4f"|format(t.entry_price) }}</td>
+      <td>{{ t.exit_time.strftime("%Y-%m-%d %H:%M") if t.exit_time else "still open" }}</td>
+      <td>{{ "$%.4f"|format(t.exit_price) if t.exit_price is not none else "-" }}</td>
+      <td>
+        {% if t.pnl_usd is not none %}
+        <span class="{{ 'pnl-pos' if t.pnl_usd >= 0 else 'pnl-neg' }}">{{ "$%.2f"|format(t.pnl_usd) }}</span>
+        {% else %}-{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No crosses detected in this window -- try a longer date range or a smaller bar size.</div>
+{% endif %}
+{% else %}
+<div class="empty">No result.</div>
+{% endif %}

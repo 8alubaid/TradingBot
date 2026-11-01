@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Backtest - Abu Khalid{% endblock %}
+{% block content %}
+
+<p><a class="accent" href="/">&larr; back to dashboard</a></p>
+
+<div class="panel">
+  <h2 style="margin-top:0;">Strategy backtest</h2>
+  <p class="market-meta" style="margin-bottom:1rem;">
+    Mechanical replay of the EMA9/EMA21 + RSI cross rules (same logic the autonomous
+    scanner uses live) against historical Alpaca bars. No AI involved -- this tests
+    the raw signal itself, not what the Decision Agent would actually have decided.
+  </p>
+
+  <div class="filter-bar">
+    <label for="bt-symbol">Symbol</label>
+    <select id="bt-symbol">
+      {% for s in filter_symbols %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <label for="bt-bar">Bar size</label>
+    <select id="bt-bar">
+      <option value="1">1 min</option>
+      <option value="15" selected>15 min</option>
+      <option value="60">1 hour</option>
+    </select>
+    <label for="bt-days">Days back</label>
+    <input type="number" id="bt-days" value="7" min="1" max="{{ max_days }}">
+    <label for="bt-notional">Notional/trade ($)</label>
+    <input type="number" id="bt-notional" value="200" min="10" step="10">
+    <button type="button" id="bt-run">Run backtest</button>
+  </div>
+
+  <div id="backtest-results">
+    <div class="empty">Pick a symbol and timeframe, then run a backtest.</div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById("bt-run").addEventListener("click", function () {
+    var symbol = document.getElementById("bt-symbol").value;
+    var barMinutes = document.getElementById("bt-bar").value;
+    var days = document.getElementById("bt-days").value;
+    var notional = document.getElementById("bt-notional").value;
+    var container = document.getElementById("backtest-results");
+
+    container.innerHTML = '<div class="empty">Running backtest...</div>';
+
+    var params = new URLSearchParams({symbol: symbol, bar_minutes: barMinutes, days: days, notional_usd: notional});
+    fetch("/backtest/run?" + params.toString())
+      .then(function (r) { return r.text(); })
+      .then(function (html) { container.innerHTML = html; })
+      .catch(function (err) {
+        container.innerHTML = '<div class="empty">Request failed: ' + err + '</div>';
+      });
+  });
+</script>
+{% endblock %}

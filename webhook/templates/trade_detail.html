@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ trade.symbol }} - {{ trade.id }}{% endblock %}
+{% block content %}
+
+<p><a class="accent" href="/">&larr; back to dashboard</a></p>
+
+<div class="panel">
+  <h2 style="margin-top:0;">{{ trade.symbol }} <span class="badge badge-{{ trade.status }}">{{ trade.status }}</span></h2>
+  <div class="meta-grid">
+    <div><span>Trade ID</span>{{ trade.id }}</div>
+    <div><span>Time (UTC)</span>{{ trade.timestamp[:19].replace("T", " ") }}</div>
+    <div><span>Signal</span>{{ trade.signal_action }}</div>
+    <div><span>Decision</span>{{ trade.decision_action }}</div>
+    <div><span>Price</span>{{ "$%.2f"|format(trade.price) if trade.price else "-" }}</div>
+    <div><span>Notional</span>{{ "$%.2f"|format(trade.notional_usd) if trade.notional_usd else "-" }}</div>
+    <div><span>Order ID</span>{{ trade.order_id or "-" }}</div>
+    <div><span>P&amp;L</span>
+      {% if trade.pnl_usd is not none %}
+        <span class="{{ 'pnl-pos' if trade.pnl_usd >= 0 else 'pnl-neg' }}">{{ "$%.2f"|format(trade.pnl_usd) }}</span>
+      {% else %}-{% endif %}
+    </div>
+    <div><span>Closed at</span>{{ trade.closed_at[:19].replace("T", " ") if trade.closed_at else "-" }}</div>
+  </div>
+
+  <h3>Decision rationale</h3>
+  <div class="rationale">{{ trade.rationale }}</div>
+</div>
+
+{% if lesson_html %}
+<div class="panel">
+  <h2 style="margin-top:0;">Lesson journal</h2>
+  <div class="lesson">{{ lesson_html | safe }}</div>
+</div>
+{% endif %}
+
+{% endblock %}

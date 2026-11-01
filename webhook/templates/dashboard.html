@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Abu Khalid{% endblock %}
+{% block content %}
+
+<div class="hero-panel">
+  <img src="/static/img/abu_khalid_hero.jpg" alt="Abu Khalid, agentic trading unit" class="hero-img">
+  <div class="hero-caption">
+    <strong>Abu Khalid</strong>
+    <span>Agentic crypto trading unit, running on Google Cloud</span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="chart-toolbar">
+    <label for="symbol-picker">Chart symbol</label>
+    <select id="symbol-picker">
+      {% for choice in symbol_choices %}
+      <option value="{{ choice.value }}" {% if choice.value == chart_symbol %}selected{% endif %}>{{ choice.label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="tradingview-widget-container">
+    <div id="tradingview_chart"></div>
+    <script src="https://s3.tradingview.com/tv.js"></script>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0;">Market overview</h2>
+  <div id="market-overview-container">
+    {% include "_market_overview.html" %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0;">Performance</h2>
+  <div id="performance-container">
+    {% include "_performance.html" %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0;">System health</h2>
+  <div id="health-container">
+    {% include "_health.html" %}
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0;">Recent decisions</h2>
+  <div class="filter-bar">
+    <label for="filter-symbol">Symbol</label>
+    <select id="filter-symbol">
+      <option value="">All</option>
+      {% for s in filter_symbols %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <label for="filter-status">Status</label>
+    <select id="filter-status">
+      <option value="">All</option>
+      {% for s in filter_statuses %}
+      <option value="{{ s }}">{{ s }}</option>
+      {% endfor %}
+    </select>
+    <label for="filter-from">From</label>
+    <input type="date" id="filter-from">
+    <label for="filter-to">To</label>
+    <input type="date" id="filter-to">
+    <button type="button" id="filter-clear">Clear</button>
+  </div>
+  <div id="trades-table-container">
+    {% include "_trades_table.html" %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var initialSymbol = {{ chart_symbol | tojson }};
+
+  function renderChart(symbol) {
+    document.getElementById("tradingview_chart").innerHTML = "";
+    new TradingView.widget({
+      "width": "100%",
+      "height": 400,
+      "symbol": symbol,
+      "interval": "60",
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "en",
+      "toolbar_bg": "#171a21",
+      "enable_publishing": false,
+      "container_id": "tradingview_chart"
+    });
+  }
+
+  renderChart(initialSymbol);
+
+  document.getElementById("symbol-picker").addEventListener("change", function (e) {
+    renderChart(e.target.value);
+  });
+
+  function refreshPartial(url, containerId) {
+    fetch(url)
+      .then(function (r) { return r.text(); })
+      .then(function (html) { document.getElementById(containerId).innerHTML = html; })
+      .catch(function (err) { console.error("dashboard refresh failed:", url, err); });
+  }
+
+  function currentTradesFilterQuery() {
+    var params = new URLSearchParams();
+    var symbol = document.getElementById("filter-symbol").value;
+    var status = document.getElementById("filter-status").value;
+    var from = document.getElementById("filter-from").value;
+    var to = document.getElementById("filter-to").value;
+    if (symbol) params.set("symbol", symbol);
+    if (status) params.set("status", status);
+    if (from) params.set("date_from", from);
+    if (to) params.set("date_to", to);
+    var qs = params.toString();
+    return qs ? "?" + qs : "";
+  }
+
+  function refreshTrades() {
+    refreshPartial("/partials/trades-table" + currentTradesFilterQuery(), "trades-table-container");
+  }
+
+  ["filter-symbol", "filter-status", "filter-from", "filter-to"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", refreshTrades);
+  });
+  document.getElementById("filter-clear").addEventListener("click", function () {
+    document.getElementById("filter-symbol").value = "";
+    document.getElementById("filter-status").value = "";
+    document.getElementById("filter-from").value = "";
+    document.getElementById("filter-to").value = "";
+    refreshTrades();
+  });
+
+  function refreshAll() {
+    refreshPartial("/partials/stats", "stats-container");
+    refreshTrades();
+    refreshPartial("/partials/market-overview", "market-overview-container");
+    refreshPartial("/partials/performance", "performance-container");
+    refreshPartial("/partials/health", "health-container");
+  }
+
+  setInterval(refreshAll, 15000);
+</script>
+{% endblock %}

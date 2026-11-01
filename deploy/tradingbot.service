@@ -1,0 +1,23 @@
+[Unit]
+Description=Claude multi-agent crypto trading bot webhook server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tradingbot
+WorkingDirectory=/opt/tradingbot
+ExecStartPre=/opt/tradingbot/deploy/fetch_secrets.sh
+EnvironmentFile=-/opt/tradingbot/.env
+ExecStart=/opt/tradingbot/.venv/bin/uvicorn webhook.server:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+# Basic hardening -- the process only needs to write inside its own directory
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/tradingbot
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,34 @@
+{% if trades %}
+<table>
+  <thead>
+    <tr>
+      <th>Time (UTC)</th>
+      <th>Symbol</th>
+      <th>Decision</th>
+      <th>Status</th>
+      <th>Notional</th>
+      <th>P&amp;L</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for t in trades %}
+    <tr>
+      <td><a href="/trade/{{ t.id }}">{{ t.timestamp[:19].replace("T", " ") }}</a></td>
+      <td><a href="/trade/{{ t.id }}">{{ t.symbol }}</a></td>
+      <td><a href="/trade/{{ t.id }}">{{ t.decision_action }}</a></td>
+      <td><a href="/trade/{{ t.id }}"><span class="badge badge-{{ t.status }}">{{ t.status }}</span></a></td>
+      <td><a href="/trade/{{ t.id }}">{{ "$%.2f"|format(t.notional_usd) if t.notional_usd else "-" }}</a></td>
+      <td>
+        <a href="/trade/{{ t.id }}">
+        {% if t.pnl_usd is not none %}
+          <span class="{{ 'pnl-pos' if t.pnl_usd >= 0 else 'pnl-neg' }}">{{ "$%.2f"|format(t.pnl_usd) }}</span>
+        {% else %}-{% endif %}
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">No trades yet. Once a TradingView alert fires, it'll show up here.</div>
+{% endif %}

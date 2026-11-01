@@ -1,0 +1,6 @@
+<span>Mode: <strong>{{ "Paper" if paper_trading else "LIVE" }}</strong></span>
+{% if account %}
+<span>Equity: <strong>${{ "%.2f"|format(account.equity) }}</strong></span>
+<span>Cash: <strong>${{ "%.2f"|format(account.cash) }}</strong></span>
+<span>Open positions: <strong>{{ account.open_positions }}</strong></span>
+{% endif %}

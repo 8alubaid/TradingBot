@@ -1,0 +1,63 @@
+// Claude Trading Bot -- EMA cross + RSI confirmation signal
+//
+// Fires a webhook alert with a real technical thesis (not a bare price cross)
+// so the Decision Agent has genuine context to reason about, instead of a
+// "TradingView test alert" it correctly learns to ignore.
+//
+// Setup:
+//   1. Pine Editor -> paste this -> "Add to Chart"
+//   2. Fill in the two inputs below (webhook secret, symbol label) via the
+//      indicator's settings (gear icon)
+//   3. Right-click the chart -> Add Alert -> Condition: this indicator ->
+//      "Any alert() function call" -> Trigger: "Once Per Bar Close" ->
+//      Expiration: "Open-ended" -> Webhook URL: your bot's /webhook/tradingview
+//      (the Message field is ignored for alert()-based alerts -- the JSON
+//      built inside the script below is what actually gets sent)
+//
+// Unlike a plain price-crossing alert, this can fire repeatedly over time --
+// no need to re-arm it after each trigger.
+
+//@version=5
+indicator("Claude Trading Bot Signal - EMA Cross + RSI", overlay=true)
+
+// === Inputs ===
+fastLen       = input.int(9, "Fast EMA Length")
+slowLen       = input.int(21, "Slow EMA Length")
+rsiLen        = input.int(14, "RSI Length")
+rsiBullMin    = input.int(50, "Min RSI for bullish confirmation")
+rsiBearMax    = input.int(50, "Max RSI for bearish confirmation")
+webhookSecret = input.string("REPLACE_WITH_YOUR_WEBHOOK_SHARED_SECRET", "Webhook Secret")
+symbolLabel   = input.string("BTC/USD", "Symbol label sent to webhook (must match the bot's SYMBOL_ALLOWLIST format, e.g. BTC/USD)")
+
+// === Indicators ===
+fastEMA = ta.ema(close, fastLen)
+slowEMA = ta.ema(close, slowLen)
+rsiVal  = ta.rsi(close, rsiLen)
+
+plot(fastEMA, "Fast EMA", color=color.blue)
+plot(slowEMA, "Slow EMA", color=color.orange)
+
+// === Signal conditions: trend cross + momentum confirmation ===
+bullCross = ta.crossover(fastEMA, slowEMA) and rsiVal > rsiBullMin
+bearCross = ta.crossunder(fastEMA, slowEMA) and rsiVal < rsiBearMax
+
+plotshape(bullCross, title="Bull Signal", location=location.belowbar, style=shape.triangleup, color=color.green, size=size.small)
+plotshape(bearCross, title="Bear Signal", location=location.abovebar, style=shape.triangledown, color=color.red, size=size.small)
+
+// === Fire webhook alerts with a real, human-readable thesis ===
+// Note: Alpaca crypto is long-only (no shorting), so the bearish case sends
+// "close" (exit an existing long) rather than "sell" (which would mean open
+// a short -- not supported, would just error at execution).
+if bullCross
+    msg = '{"secret":"' + webhookSecret + '","symbol":"' + symbolLabel + '","action":"buy","price":' +
+      str.tostring(close, format.mintick) + ',"timeframe":"' + timeframe.period + '","message":"EMA' +
+      str.tostring(fastLen) + ' crossed above EMA' + str.tostring(slowLen) + ' with RSI at ' +
+      str.tostring(rsiVal, "#.#") + ' confirming bullish momentum"}'
+    alert(msg, alert.freq_once_per_bar_close)
+
+if bearCross
+    msg = '{"secret":"' + webhookSecret + '","symbol":"' + symbolLabel + '","action":"close","price":' +
+      str.tostring(close, format.mintick) + ',"timeframe":"' + timeframe.period + '","message":"EMA' +
+      str.tostring(fastLen) + ' crossed below EMA' + str.tostring(slowLen) + ' with RSI at ' +
+      str.tostring(rsiVal, "#.#") + ' -- trend weakening, closing position"}'
+    alert(msg, alert.freq_once_per_bar_close)

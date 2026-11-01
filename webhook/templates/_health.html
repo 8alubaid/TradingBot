@@ -1,0 +1,11 @@
+{% if health.total > 0 %}
+<div class="health-grid">
+  <div class="health-stat"><span>Decisions ({{ health.hours }}h)</span><strong>{{ health.total }}</strong></div>
+  <div class="health-stat"><span>Executed</span><strong class="pnl-pos">{{ health.executed_pct }}%</strong></div>
+  <div class="health-stat"><span>Held</span><strong>{{ health.held_pct }}%</strong></div>
+  <div class="health-stat"><span>Rejected</span><strong class="pnl-neg">{{ health.rejected_pct }}%</strong></div>
+  <div class="health-stat"><span>Errors</span><strong class="pnl-neg">{{ health.error_pct }}%</strong></div>
+</div>
+{% else %}
+<div class="empty">No decisions in the last {{ health.hours }}h.</div>
+{% endif %}

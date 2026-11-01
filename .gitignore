@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+data/*.db
+lessons/*.md
+!lessons/.gitkeep
+*.log
+.pytest_cache/
+# 8 MB master copy of the branding image -- kept locally, not worth permanent git history
+assets/

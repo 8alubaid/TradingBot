@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Lessons - Abu Khalid{% endblock %}
+{% block content %}
+
+<p><a class="accent" href="/">&larr; back to dashboard</a></p>
+
+<div class="panel">
+  <h2 style="margin-top:0;">Lessons learned ({{ lessons|length }})</h2>
+  {% if lessons %}
+  <div class="lessons-list">
+    {% for l in lessons %}
+    <a class="lesson-entry" href="/trade/{{ l.trade_id }}">
+      <div class="lesson-entry-header">
+        <span class="badge badge-{{ l.status }}">{{ l.status }}</span>
+        <strong>{{ l.symbol }}</strong>
+        <span class="market-meta">{{ l.decision }}</span>
+        <span class="market-meta">{{ l.date[:19].replace("T", " ") if l.date else "" }}</span>
+      </div>
+      <div class="lesson-snippet">{{ l.snippet }}{% if l.snippet|length >= 220 %}&hellip;{% endif %}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">No lessons yet.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

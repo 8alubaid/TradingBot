@@ -1,0 +1,13 @@
+<div class="health-grid">
+  <div class="health-stat">
+    <span>Total realized P&amp;L</span>
+    <strong class="{{ 'pnl-pos' if perf.total_realized_pnl >= 0 else 'pnl-neg' }}">{{ "$%.2f"|format(perf.total_realized_pnl) }}</strong>
+  </div>
+  <div class="health-stat">
+    <span>Win rate</span>
+    <strong>{{ "%.1f%%"|format(perf.win_rate_pct) if perf.win_rate_pct is not none else "-" }}</strong>
+  </div>
+  <div class="health-stat"><span>Closed trades</span><strong>{{ perf.closed_count }}</strong></div>
+  <div class="health-stat"><span>Trades today</span><strong>{{ perf.trades_today }}</strong></div>
+  <div class="health-stat"><span>Trades all-time</span><strong>{{ perf.trades_all_time }}</strong></div>
+</div>

@@ -1,0 +1,20 @@
+{% if rows %}
+<div class="market-grid">
+  {% for r in rows %}
+  <div class="market-card">
+    <div class="market-card-header">
+      {% if r.icon %}<img src="{{ r.icon }}" alt="" width="18" height="18">{% endif %}
+      <strong>{{ r.symbol }}</strong>
+    </div>
+    <div class="market-price">{{ "$%.2f"|format(r.price) if r.price is not none else "-" }}</div>
+    <div class="{{ 'pnl-pos' if r.change_24h_pct is not none and r.change_24h_pct >= 0 else 'pnl-neg' }}">
+      {% if r.change_24h_pct is not none %}{{ "%+.2f"|format(r.change_24h_pct) }}% (24h){% else %}24h: -{% endif %}
+    </div>
+    <div class="market-meta">Mkt cap: {{ "${:,.0f}".format(r.market_cap) if r.market_cap is not none else "-" }}</div>
+    <div class="market-meta">Vol (24h): {{ "${:,.0f}".format(r.volume_24h) if r.volume_24h is not none else "-" }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">Market data unavailable right now.</div>
+{% endif %}

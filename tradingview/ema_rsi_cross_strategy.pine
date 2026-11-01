@@ -1,0 +1,70 @@
+// Claude Trading Bot -- EMA cross + RSI confirmation, as a backtestable STRATEGY
+//
+// Same signal logic as ema_rsi_cross_alert.pine (that one only draws shapes and
+// fires webhook alerts; this one places simulated orders so TradingView's
+// Strategy Tester can report win rate, P&L, and an equity curve), and mirrors
+// core/backtest.py's simulate() exactly:
+//   - long only, one position at a time (pyramiding=0)
+//   - fixed $ notional per entry, sized via strategy.cash
+//   - exit ONLY on a confirmed bearish cross -- no stop-loss, no take-profit
+//   - zero commission/slippage by default, to match backtest.py's assumptions
+//     exactly (Strategy Tester -> Properties tab to add realistic costs, see
+//     the comment further down)
+//
+// To test 1m / 5m / 15m / 30m / 1H / 4H: just change the chart's timeframe
+// dropdown and re-open the Strategy Tester tab -- nothing in this script is
+// timeframe-specific, same as how core/scanner.py just fetches bars at
+// whatever SCAN_BAR_TIMEFRAME_MINUTES is set to and runs identical math on them.
+
+//@version=5
+strategy(
+     "Claude Trading Bot Strategy - EMA Cross + RSI",
+     overlay=true,
+     pyramiding=0,
+     default_qty_type=strategy.cash,
+     default_qty_value=200,
+     initial_capital=10000,
+     process_orders_on_close=true,
+     commission_type=strategy.commission.percent,
+     commission_value=0.0,
+     slippage=0)
+
+// === Inputs (same names/defaults as ema_rsi_cross_alert.pine) ===
+fastLen    = input.int(9, "Fast EMA Length")
+slowLen    = input.int(21, "Slow EMA Length")
+rsiLen     = input.int(14, "RSI Length")
+rsiBullMin = input.int(50, "Min RSI for bullish confirmation")
+rsiBearMax = input.int(50, "Max RSI for bearish confirmation")
+
+// Costs are 0% commission / 0 slippage above, matching backtest.py's assumption
+// exactly. For a second, more honest pass: Strategy Tester tab -> Properties ->
+// set "Commission" (e.g. 0.25% for a rough Kraken/Alpaca crypto taker fee) and
+// "Slippage" (e.g. 1-2 ticks) there directly -- no code edit needed, and it's
+// the normal way to do this in TradingView rather than hardcoding it here.
+
+// === Indicators (identical formulas to the alert script and to core/scanner.py) ===
+fastEMA = ta.ema(close, fastLen)
+slowEMA = ta.ema(close, slowLen)
+rsiVal  = ta.rsi(close, rsiLen)   // Pine's ta.rsi is Wilder's smoothing, same as the Python
+
+plot(fastEMA, "Fast EMA", color=color.blue)
+plot(slowEMA, "Slow EMA", color=color.orange)
+
+// === Signal conditions: fires only on the crossing bar, not every bar the
+// condition happens to be true -- same "regime flip" semantics as
+// core/scanner.py's evaluate_regime(), not a naive "is fast > slow" check. ===
+bullCross = ta.crossover(fastEMA, slowEMA) and rsiVal > rsiBullMin
+bearCross = ta.crossunder(fastEMA, slowEMA) and rsiVal < rsiBearMax
+
+plotshape(bullCross, title="Bull Signal", location=location.belowbar, style=shape.triangleup, color=color.green, size=size.small)
+plotshape(bearCross, title="Bear Signal", location=location.abovebar, style=shape.triangledown, color=color.red, size=size.small)
+
+// === Orders ===
+// pyramiding=0 above means this is silently ignored if already long -- same as
+// the Python risk manager treating a BUY while a position is open as a no-op.
+if bullCross
+    strategy.entry("Long", strategy.long)
+
+// No-op if flat -- same as a close signal with nothing open being held, not queued.
+if bearCross
+    strategy.close("Long")
