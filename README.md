@@ -12,6 +12,10 @@ entries.
 > strategy or financial advice. The live-trading gate has never been enabled, and
 > results from the small paper-trading sample so far are roughly flat.
 
+## Architecture
+
+![Architecture: signal sources, the Claude decision pipeline on a Compute Engine VM, external APIs, and the GCP managed services around it](architecture.png)
+
 ## How it works
 
 Two ways a signal reaches the pipeline: a TradingView alert, or the bot's own
